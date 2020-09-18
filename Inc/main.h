@@ -43,11 +43,11 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-char msg[50];
+char msg[150];
 
 //access during ISR.
 //See Figure 32.
-long int temp_high0, temp_low0, temp_high1, temp_low1, temp_high2, th, tl;
+long int temp_high0, temp_low0, temp_high1, temp_low1, temp_high2, temp_low2, temp_high3;
 
 /* USER CODE END EC */
 

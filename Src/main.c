@@ -32,7 +32,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define TMP_AVERAGE 10
+//#define TIME_US 1000000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,8 +57,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void delay_us (uint16_t us);
 //void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim);
@@ -81,8 +82,8 @@ uint8_t Is_First_Captured = 0;
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	float temp1=0, temp2=0;
-	float T1, T2, T3, T4, T5;
+	float temp1=0, temp2=0, temp3=0;
+	float t_single=0, t_global=0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -105,8 +106,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
-  MX_TIM3_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   // Initialise Daisy-Chain. Set Pin High before pulse
   //and wait for >20ns before setting to LOW.
@@ -129,32 +130,32 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	    tempsegment = 1;
-	    HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
-	    send_Pulse(GPIOA, GPIO_PIN_1);
-        //__HAL_TIM_SET_COUNTER(&htim1,0);  // set the counter value a 0
-        //__HAL_TIM_SET_COUNTER(&htim2,0);
-        //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-        // Wait while OUT Receives pulse. Let interupts to perform work.
-		//while(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1)) {}
-        while(tempsegment < 4) {}
-		// Set back to HIGH
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+	    temp1 = 0, temp2 = 0, temp3 = 0;
+        __HAL_TIM_SET_COUNTER(&htim1,0);
+		__HAL_TIM_SET_COUNTER(&htim2,0);
+		__HAL_TIM_SET_COUNTER(&htim3,0);
+		HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
+		for(int i = 0; i < TMP_AVERAGE; i++) {
+			tempsegment = 0;
+			send_Pulse(GPIOA, GPIO_PIN_1);
+			while(tempsegment < 8) {}		// 2 Sensors took 4(5) iterations; 3 Sensors 6(7)
+			//Convert variables to floats for calculation
+			//T5= temp_high2;
+			temp1+=421-(751*((((float)temp_high0)/1000)/(((float)temp_low0)/1000)));
+			temp2+=421-(751*((((float)temp_high1)/1000)/(((float)temp_low1)/1000)));
+			temp3+=421-(751*((((float)temp_high2)/1000)/(((float)temp_low2)/1000)));
+			if(i == 0) t_single = (__HAL_TIM_GET_COUNTER(&htim3))/1000;
+		}
 		HAL_NVIC_DisableIRQ(EXTI0_1_IRQn);
-		//Convert variables to floats for calculation
-		T1= temp_high0;
-		T2= temp_low0;
-		T3= temp_high1;
-		T4= temp_low1;
-		T5= temp_high2;
-		temp1=421-(751*((T1/1000)/((T2+T3)/1000)));
-		temp2=421-(751*((T3/1000)/((T4+T5)/1000)));
-
-		sprintf(msg, "Temp1: %f C:::Temp2: %f C \r\n", temp1, temp2);
+		t_global = (__HAL_TIM_GET_COUNTER(&htim3))/1000;
+		sprintf(msg, "Temp1: %0.4f C ::: Temp2: %0.4f C ::: Temp3: %0.4f C.\n"
+				     "After: %3.1f ms and Averaging %.3f s. Sampling: %d\r\n",
+				temp1/TMP_AVERAGE, temp2/TMP_AVERAGE, temp3/TMP_AVERAGE,
+				t_single, t_global/1000, TMP_AVERAGE);
 		HAL_UART_Transmit(&huart2, (uint8_t*)msg,
 					 strlen((char*)msg), HAL_MAX_DELAY);
 
-		HAL_Delay(1750);
+		HAL_Delay(1000);
         //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
 	    //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 	    // Temperature (°C) = 421 − (751 × (TH∕TL))
@@ -299,25 +300,24 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 0 */
 
-  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM3_Init 1 */
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = 48-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
+  htim3.Init.Period = 0xffff-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
   {
     Error_Handler();
   }
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_GATED;
-  sSlaveConfig.InputTrigger = TIM_TS_ITR0;
-  if (HAL_TIM_SlaveConfigSynchro(&htim3, &sSlaveConfig) != HAL_OK)
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
   {
     Error_Handler();
   }

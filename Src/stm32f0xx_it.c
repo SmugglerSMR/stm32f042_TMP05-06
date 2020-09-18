@@ -57,7 +57,7 @@ int tempsegment = 0;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef htim3;
+
 /* USER CODE BEGIN EV */
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
@@ -149,73 +149,60 @@ void SysTick_Handler(void)
 void EXTI0_1_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI0_1_IRQn 0 */
-	if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_0)) {
+	if (tempsegment == 0) {
+		__HAL_TIM_SET_COUNTER(&htim1,0);
+	} else if (tempsegment == 1) {
+		temp_high0 = (__HAL_TIM_GET_COUNTER(&htim1)); //Convert to integer
 		__HAL_TIM_SET_COUNTER(&htim2,0);
-		//tempsegment++;
-	} else {
-		if (tempsegment == 0) {
-			//__HAL_TIM_SET_COUNTER(&htim1,0); //Reset count
-			__HAL_TIM_SET_COUNTER(&htim2,0);
-	//			timer0_count=0;
-	//			timer1_count=0;
-		} else if (tempsegment == 1) {
-			//temp_high0 = (__HAL_TIM_GET_COUNTER(&htim1)+__HAL_TIM_GET_COUNTER(&htim2)) +(timer0_count*65536); //Convert to integer
-			temp_high0 = (__HAL_TIM_GET_COUNTER(&htim2)); //Convert to integer
-			//temp_high0 = timer0_count;
-			__HAL_TIM_SET_COUNTER(&htim1,0); //Reset count
-			__HAL_TIM_SET_COUNTER(&htim2,0);
-			//timer0_count=0;
-		} else if (tempsegment == 2) {
-			//temp_low0 = (th+tl)+(timer1_count*65536); //Convert to integer
-			temp_low0 = (__HAL_TIM_GET_COUNTER(&htim1)); //Convert to integer
-			temp_high1 = (__HAL_TIM_GET_COUNTER(&htim2)); //Convert to integer
-			__HAL_TIM_SET_COUNTER(&htim1,0); //Reset count
-			__HAL_TIM_SET_COUNTER(&htim2,0);
-	//		temp_low0 = timer1_count;
-	//		temp_high0 = timer0_count;
-	//		timer0_count=0;
-	//		timer1_count=0;
-		} else if (tempsegment == 3) {
-			temp_low1 = (__HAL_TIM_GET_COUNTER(&htim1)); //Convert to integer
-			temp_high2 = (__HAL_TIM_GET_COUNTER(&htim2));
-			__HAL_TIM_SET_COUNTER(&htim1,0); //Reset count
-			__HAL_TIM_SET_COUNTER(&htim2,0);
-	//		temp_low0 = timer1_count;
-	//		temp_high0 = timer0_count;
-	//
-	//		timer0_count=0;
-	//		timer1_count=0;
-		}
-		tempsegment++;
+	} else if (tempsegment == 2) {
+		temp_low0 = (__HAL_TIM_GET_COUNTER(&htim2)); //Convert to integer
+		__HAL_TIM_SET_COUNTER(&htim1,0);
+	} else if (tempsegment == 3) {
+		temp_high1 = (__HAL_TIM_GET_COUNTER(&htim1));
+		__HAL_TIM_SET_COUNTER(&htim2,0);
+	} else if (tempsegment == 4) {
+		temp_low1 = (__HAL_TIM_GET_COUNTER(&htim2));
+		__HAL_TIM_SET_COUNTER(&htim1,0);
+	} else if (tempsegment == 5) {
+		temp_high2 = (__HAL_TIM_GET_COUNTER(&htim1));
+		__HAL_TIM_SET_COUNTER(&htim2,0);
+	} else if (tempsegment == 6) {
+		temp_low2 = (__HAL_TIM_GET_COUNTER(&htim2));
+		__HAL_TIM_SET_COUNTER(&htim2,0);
+	} else if (tempsegment == 7) {
+		temp_high3 = (__HAL_TIM_GET_COUNTER(&htim1));
+		__HAL_TIM_SET_COUNTER(&htim2,0);
 	}
+	tempsegment++;
 
-
+//	if(HAL_GPIO_ReadPin(GPIOB,GPIO_PIN_0)) {
+//		__HAL_TIM_SET_COUNTER(&htim2,0);
+//	} else {
+//		if (tempsegment == 1) {
+//			temp_high0 = (__HAL_TIM_GET_COUNTER(&htim2));
+//
+//			__HAL_TIM_SET_COUNTER(&htim1,0);
+//			__HAL_TIM_SET_COUNTER(&htim2,0);
+//
+//		} else if (tempsegment == 2) {
+//			temp_high1 = (__HAL_TIM_GET_COUNTER(&htim2)); //Convert to integer
+//			temp_low0 = (__HAL_TIM_GET_COUNTER(&htim1)); //Convert to integer
+//
+//			__HAL_TIM_SET_COUNTER(&htim1,0); //Reset count
+//			__HAL_TIM_SET_COUNTER(&htim2,0);
+//		} else if (tempsegment == 3) {
+//			temp_low1 = (__HAL_TIM_GET_COUNTER(&htim1)); //Convert to integer
+//			temp_high2 = (__HAL_TIM_GET_COUNTER(&htim2));
+//			__HAL_TIM_SET_COUNTER(&htim1,0); //Reset count
+//			__HAL_TIM_SET_COUNTER(&htim2,0);
+//		}
+//		tempsegment++;
+//	}
   /* USER CODE END EXTI0_1_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
   /* USER CODE BEGIN EXTI0_1_IRQn 1 */
 
   /* USER CODE END EXTI0_1_IRQn 1 */
-}
-
-/**
-  * @brief This function handles TIM3 global interrupt.
-  */
-void TIM3_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM3_IRQn 0 */
-//	timer0_count++;
-//	timer1_count++;
-	// or make if statement
-//	if(HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_1)) {
-//			//__HAL_TIM_SET_COUNTER(&htim2,0);
-//			timer1_count=0;
-//		} else {
-	__HAL_TIM_SET_COUNTER(&htim2,0);
-  /* USER CODE END TIM3_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim3);
-  /* USER CODE BEGIN TIM3_IRQn 1 */
-
-  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
