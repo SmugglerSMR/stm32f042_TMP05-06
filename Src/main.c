@@ -138,7 +138,7 @@ int main(void)
 		for(int i = 0; i < TMP_AVERAGE; i++) {
 			tempsegment = 0;
 			send_Pulse(GPIOA, GPIO_PIN_1);
-			while(tempsegment < 8) {}		// 2 Sensors took 4(5) iterations; 3 Sensors 6(7)
+			while(tempsegment < 7) {}		// 2 Sensors took 4(5) iterations; 3 Sensors 6(7)
 			//Convert variables to floats for calculation
 			//T5= temp_high2;
 			temp1+=421-(751*((((float)temp_high0)/1000)/(((float)temp_low0)/1000)));
